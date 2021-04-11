@@ -1,9 +1,10 @@
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.messages.views import SuccessMessageMixin
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseForbidden, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views import generic
-from django.views.generic.edit import CreateView
+from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from .forms import UserRegistrationForm
 from .models import Photo, User
 
@@ -23,7 +24,7 @@ class PhotoListByTag(generic.ListView):
         return Photo.objects.filter(tags__icontains=self.kwargs['tag']).order_by('-id')
 
 
-class PhotoListByUser(generic.ListView):
+class PhotoListByUser(LoginRequiredMixin, generic.ListView):
     model = Photo
     template_name ='catalog/photo_by_user.html'
     paginate_by = 20
@@ -32,7 +33,7 @@ class PhotoListByUser(generic.ListView):
         return Photo.objects.filter(author__exact=self.request.user).order_by('-id')
 
 
-class UploadPhoto(CreateView):
+class UploadPhoto(LoginRequiredMixin, CreateView):
     model = Photo
     fields = ['photo', 'tags']
     success_url = '/'
@@ -42,6 +43,33 @@ class UploadPhoto(CreateView):
         photo.author = User.objects.get(username=self.request.user)
         photo.save()
         return HttpResponseRedirect(self.success_url)
+
+
+class UpdatePhoto(LoginRequiredMixin, UpdateView):
+    model = Photo
+    fields = ['tags']
+    template_name ='catalog/update_photo.html'
+    success_url = '/'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        print(self.object.author, request.user)
+        if self.object.author != request.user:
+            return HttpResponseForbidden('Невозможно редактировать чужие изображения')
+        return super().dispatch(request, *args, **kwargs)
+
+
+class DeletePhoto(LoginRequiredMixin, DeleteView):
+    model = Photo
+    success_url = '/'
+
+    def delete(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if self.object.author == request.user:
+            self.object.delete()
+            return HttpResponseRedirect(self.success_url)
+        else:
+            return HttpResponseForbidden('Невозможно удалять чужие изображения')
 
 
 class SignUpView(SuccessMessageMixin, CreateView):

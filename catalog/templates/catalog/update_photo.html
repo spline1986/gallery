@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Загрузка изображения</h2>
+<h2>Редактирование изображения</h2>
+<img src="/{{ photo.thumbnail }}"><br>
+<a href="/catalog/photo/{{ photo.pk }}/delete">Удалить</a><br>
 <form action="" enctype="multipart/form-data" method="post">
   {% csrf_token %}
   <table>

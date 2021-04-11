@@ -18,7 +18,8 @@
 	  [<a href="{% url 'logout'%}?next={{request.path}}">Выйти</a>] |
 	  <a href="/catalog/upload/">Загрузить фото</a>
 	  {% else %}
-	  <a href="{% url 'login' %}?next={{ requsrs.path }}">Войти</a>
+	  <a href="{% url 'login' %}?next={{ requsrs.path }}">Войти</a> |
+	  <a href="/catalog/register/">Зарегистрироваться</a>
 	  {% endif %}
 	</div>
 	{% endblock %}

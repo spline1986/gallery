@@ -4,6 +4,9 @@
 {% if photo_list %}
 {% for photo in photo_list %}
 <div class="photo">
+  {% if photo.author ==  request.user %}
+  <a href="/catalog/photo/{{ photo.pk }}/update">Редактировать</a><br>
+  {% endif %}
   <a href="/{{ photo.photo }}" target="_blank"><img src="/{{ photo.thumbnail }}"></a><br>
   {% for tag in photo.tags_as_list %}
   <a href="tag/{{ tag }}">{{ tag }}</a>

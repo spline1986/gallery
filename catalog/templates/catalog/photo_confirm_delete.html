@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Удаление изображения</h2>
+
+<p>Вы уверены что хотите удалить изображение?</p>
+<div class="photo">
+  <img src="/{{ photo.thumbnail }}"><br>
+  {{ photo.tags }}
+</div>
+
+<form action="" method="POST">
+  {% csrf_token %}
+  <input type="submit" value="Да, удалить" />
+</form>
+
+{% endblock %}
