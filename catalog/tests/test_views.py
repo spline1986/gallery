@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls  import reverse
+from catalog.forms import UploadPhotoForm
 from catalog.models import Photo
 
 
@@ -18,7 +19,6 @@ class PhotoListViewTest(TestCase):
     @classmethod
     def setUpTestData(cls):
         user = make_user()
-        user.save()
         for n in range(25):
             Photo.objects.create(
                 author = user,
@@ -58,7 +58,7 @@ class PhotoListViewTest(TestCase):
         self.assertTrue( len(resp.context['photo_list']) == 5)
 
 
-class PhotoListByUserTest(TestCase):       
+class PhotoListByUserTest(TestCase):
 
     @classmethod
     def setUpTestData(cls):
@@ -131,3 +131,80 @@ class PhotoListByUserTest(TestCase):
         self.assertEqual( len(resp.context['photo_list']) ,20)
         for photo in resp.context['photo_list']:
             self.assertEqual(resp.context['user'], photo.author)
+
+
+class PhotoListByTagTest(TestCase):
+
+    @classmethod
+    def setUpTestData(cls):
+        user = make_user()
+        for n in range(25):
+            Photo.objects.create(
+                author = user,
+                tags = 'test image ' + str(n),
+                photo = SimpleUploadedFile(
+                    name = 'test_image.jpg',
+                    content = open('catalog/tests/test_image.jpg', 'rb').read(),
+                    content_type = 'image/jpeg'
+                )
+            )
+
+
+    def test_view_url_exists_at_desired_location(self):
+        resp = self.client.get('/catalog/tag/test/')
+        self.assertEqual(resp.status_code, 200)
+
+    def test_view_url_accessible_by_name(self):
+        resp = self.client.get(reverse('by-tag', args=['test']))
+        self.assertEqual(resp.status_code, 200)
+
+    def test_view_uses_correct_template(self):
+        resp = self.client.get(reverse('by-tag', args=['test']))
+        self.assertEqual(resp.status_code, 200)
+        self.assertTemplateUsed(resp, 'catalog/photo_by_tag.html')
+
+    def test_pagination_is_twenty(self):
+        resp = self.client.get(reverse('by-tag', args=['test']))
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue('is_paginated' in resp.context)
+        self.assertTrue(resp.context['is_paginated'] == True)
+        self.assertTrue( len(resp.context['photo_list']) == 20)
+
+    def test_lists_all_authors(self):
+        resp = self.client.get(reverse('by-tag', args=['test'])+'?page=2')
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue('is_paginated' in resp.context)
+        self.assertTrue(resp.context['is_paginated'] == True)
+        self.assertTrue( len(resp.context['photo_list']) == 5)
+
+
+class UploadPhotoTest(TestCase):
+
+    def setUp(self):
+        user = make_user()
+
+    def test_redirect_if_not_logged_in(self):
+        resp = self.client.get(reverse('upload-photo'))
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(resp.url.startswith('/accounts/login/'))
+
+    def test_logged_in_upload_photo(self):
+        user = self.client.login(username='tester', password='secret')
+        resp = self.client.get(reverse('upload-photo'))
+        self.assertEqual(resp.status_code, 200)
+
+    def test_uses_correct_template(self):
+        user = self.client.login(username='tester', password='secret')
+        resp = self.client.get(reverse('upload-photo'))
+        self.assertEqual(resp.status_code, 200)
+        self.assertTemplateUsed(resp, 'catalog/photo_form.html')
+
+    def test_redirects_to_index_on_success(self):
+        user = self.client.login(username='tester', password='secret')
+        photo = SimpleUploadedFile(
+            name = 'test_image.jpg',
+            content = open('catalog/tests/test_image.jpg', 'rb').read(),
+            content_type = 'image/jpeg'
+        )
+        resp = self.client.post(reverse('upload-photo'), {'photo': photo, 'tags': 'test image'})
+        self.assertRedirects(resp, '/catalog', status_code=302, target_status_code=301)
