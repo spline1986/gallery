@@ -3,3 +3,7 @@
 	text-align: center;
 	margin: 1em;
 }
+
+.errorlist {
+	color: red;
+}
