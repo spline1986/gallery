@@ -36,7 +36,7 @@ class PhotoListByUser(LoginRequiredMixin, generic.ListView):
 class UploadPhoto(LoginRequiredMixin, CreateView):
     model = Photo
     fields = ['photo', 'tags']
-    success_url = '/'
+    success_url = '/catalog'
 
     def form_valid(self, form):
         photo = form.save(commit=False)
